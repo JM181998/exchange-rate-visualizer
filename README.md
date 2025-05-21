@@ -1,24 +1,24 @@
 # Exchange Rate Visualizer 📈
 
-Este proyecto descarga datos históricos del tipo de cambio desde la [Frankfurter API](https://www.frankfurter.app/) y los visualiza usando Plotly.
+This project fetches historical exchange rates from the [Frankfurter API](https://www.frankfurter.app/) and visualizes them using Streamlit and Plotly.
 
-## ✨ Características
+## ✨ Features
 
-- Descarga automática de datos históricos desde 1999 hasta hoy.
-- Gráfico interactivo con Plotly.
-- Exportación a CSV (`data/historical_rates.csv`).
+- Automatically downloads historical data from 1999 to today.
+- Interactive Plotly chart with exchange rate trends.
+- CSV download option for local use.
 
-## 📦 Requisitos
+## 📦 Requirements
 
-Necesitas tener instalado:
+You need:
 
-- Python 3.7 o superior
-- `pip` para instalar paquetes
+- Python 3.7 or higher
+- `pip` for installing packages
 
-## 🚀 Cómo ejecutar el proyecto
+## 🚀 How to Run Locally
 
-1. Clona el repositorio:
+1. Clone this repository:
 
 ```bash
-git clone https://github.com/TU-USUARIO/exchange-rate-visualizer.git
+git clone https://github.com/YOUR-USERNAME/exchange-rate-visualizer.git
 cd exchange-rate-visualizer
