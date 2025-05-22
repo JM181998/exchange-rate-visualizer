@@ -6,14 +6,13 @@ import plotly.graph_objects as go
 
 st.set_page_config(page_title="Exchange Rate Visualizer", layout="wide")
 
-# @st.cache_data
+@st.cache_data
 def fetch_exchange_rates():
     end_date = datetime.date.today().isoformat()
     url = f'https://api.frankfurter.app/1999-01-01..{end_date}?base=EUR&symbols=USD,AUD,GBP,CHF'
-    
     response = requests.get(url)
     if response.status_code != 200:
-        raise Exception(f"Request failed with status code: {response.status_code}")
+        raise Exception(f"Request failed: {response.status_code}")
     
     data = response.json()
     dates, usd, aud, gbp, chf = [], [], [], [], []
@@ -32,32 +31,26 @@ def fetch_exchange_rates():
         'GBP/EUR': gbp,
         'CHF/EUR': chf
     })
-
+    df.to_csv("data/historical_rates.csv", index=False)
     return df
 
 def plot_exchange_rates(df):
     fig = go.Figure()
-    currencies = ['USD/EUR', 'AUD/EUR', 'GBP/EUR', 'CHF/EUR']
-    colors = ['blue', 'green', 'red', 'purple']
-
-    for currency, color in zip(currencies, colors):
+    for currency, color in zip(['USD/EUR', 'AUD/EUR', 'GBP/EUR', 'CHF/EUR'], ['blue', 'green', 'red', 'purple']):
         fig.add_trace(go.Scatter(
             x=df['Date'], y=df[currency], mode='lines', name=currency,
             hovertemplate=f"1 EUR = %{{y:.4f}} {currency[:3]}<br>Date: %{{x|%Y-%m-%d}}",
             line=dict(color=color)
         ))
-
     fig.update_layout(
-        title="Exchange Rate Trends (EUR to Other Currencies)",
+        title="Exchange Rate Trends (EUR to USD, AUD, GBP, CHF)",
         xaxis_title="Date",
         yaxis_title="Exchange Rate",
-        template="plotly_white",
+        template="plotly_dark",
         hovermode="x unified"
     )
-
     return fig
 
-# --- Streamlit App UI ---
 st.title("📈 Exchange Rate Visualizer")
 st.markdown("Track historical exchange rates of the Euro (EUR) against USD, AUD, GBP, and CHF since 1999.")
 

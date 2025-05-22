@@ -1,0 +1,13 @@
+# Ignorar entornos virtuales
+venv/
+
+# Ignorar logs
+*.log
+
+# Ignorar modelos entrenados y predicciones
+*.keras
+*.csv
+
+# Archivos de Python bytecode
+__pycache__/
+*.pyc

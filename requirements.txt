@@ -2,3 +2,7 @@ requests
 pandas
 plotly
 streamlit
+numpy
+matplotlib
+scikit-learn
+tensorflow
