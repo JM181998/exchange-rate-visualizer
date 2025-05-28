@@ -1,13 +1,17 @@
-# Ignorar entornos virtuales
-venv/
-
-# Ignorar logs
-*.log
-
-# Ignorar modelos entrenados y predicciones
-*.keras
-*.csv
-
-# Archivos de Python bytecode
+# Python
 __pycache__/
 *.pyc
+
+# Virtual environment
+venv/
+
+# Model files (opcional)
+modelos_lstm/
+
+# Logs
+*.log
+
+# Datos grandes (opcional)
+#data/
+
+.DS_Store

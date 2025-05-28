@@ -1,17 +1,20 @@
+# ✅ FILE: train_lstm.py
 import os
-import time
 import sys
-import numpy as np
-import pandas as pd
+import time
 import logging
 from datetime import timedelta
-from sklearn.preprocessing import MinMaxScaler
+
+import numpy as np
+import pandas as pd
 from sklearn.metrics import mean_absolute_error, mean_squared_error, r2_score
+from sklearn.preprocessing import MinMaxScaler
+
 from tensorflow.keras.models import Sequential
-from tensorflow.keras.layers import LSTM, Dense, Dropout, Input, TimeDistributed, RepeatVector
+from tensorflow.keras.layers import LSTM, Dense, Dropout, RepeatVector, TimeDistributed, Input
 from tensorflow.keras.callbacks import EarlyStopping, ReduceLROnPlateau
 
-# ======= CONFIGURATION =======
+# ======= CONFIGURATION ======= 
 csv_file = 'data/historical_rates.csv'
 currencies = ['USD/EUR', 'AUD/EUR', 'GBP/EUR', 'CHF/EUR']
 look_back = 1000
@@ -91,7 +94,6 @@ for currency in currencies:
               callbacks=callbacks,
               verbose=1)
 
-    # ======= EVALUATION =======
     y_pred_scaled = model.predict(X_test, verbose=0)
     y_pred = scaler.inverse_transform(y_pred_scaled.reshape(-1, 1)).reshape(-1, future_days)
     y_true = scaler.inverse_transform(y_test.reshape(-1, 1)).reshape(-1, future_days)
@@ -103,10 +105,13 @@ for currency in currencies:
     log(f"📊 MAE: {mae:.6f} | RMSE: {rmse:.6f} | R²: {r2:.4f}")
     all_metrics.append({'Currency': currency, 'MAE': mae, 'RMSE': rmse, 'R2': r2})
 
-    # ======= FINAL PREDICTION =======
+    # Final forecast from last window
     last_window = scaled[-look_back:].reshape(1, look_back, 1)
     prediction_scaled = model.predict(last_window, verbose=0).reshape(-1, 1)
     prediction = scaler.inverse_transform(prediction_scaled).flatten()
+
+    log(f"🔍 Last real value: {series[-1][0]}")
+    log(f"🔮 First predicted value: {prediction[0]}")
 
     start_date = df.index[-1] + timedelta(days=1)
     future_dates = pd.date_range(start_date, periods=future_days, freq='D')
@@ -114,7 +119,6 @@ for currency in currencies:
     df_pred.to_csv(f'prediccion_{currency.replace("/", "_")}_30dias.csv')
     log(f"💾 Saved prediction: prediccion_{currency.replace('/', '_')}_30dias.csv")
 
-    # ======= SAVE MODEL =======
     if save_models:
         model_path = os.path.join(models_folder, f'modelo_{currency.replace("/", "_")}.keras')
         model.save(model_path)
