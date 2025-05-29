@@ -1,132 +1,93 @@
-# ✅ FILE: train_lstm.py
-import os
-import sys
-import time
-import logging
-from datetime import timedelta
-
-import numpy as np
 import pandas as pd
-from sklearn.metrics import mean_absolute_error, mean_squared_error, r2_score
+import numpy as np
+import os
+import time
 from sklearn.preprocessing import MinMaxScaler
+from keras.models import Sequential
+from keras.layers import LSTM, Dense, Dropout, TimeDistributed
+from keras.callbacks import EarlyStopping, ReduceLROnPlateau
+from sklearn.metrics import mean_absolute_error, mean_squared_error, r2_score
 
-from tensorflow.keras.models import Sequential
-from tensorflow.keras.layers import LSTM, Dense, Dropout, RepeatVector, TimeDistributed, Input
-from tensorflow.keras.callbacks import EarlyStopping, ReduceLROnPlateau
-
-# ======= CONFIGURATION ======= 
-csv_file = 'data/historical_rates.csv'
-currencies = ['USD/EUR', 'AUD/EUR', 'GBP/EUR', 'CHF/EUR']
-look_back = 1000
-future_days = 30
-save_models = True
-models_folder = 'modelos_lstm'
-metrics_file = 'metricas_monedas.csv'
-
-# ======= LOGGING =======
-logging.basicConfig(filename='training_lstm.log',
-                    level=logging.INFO,
-                    format='%(asctime)s - %(message)s',
-                    filemode='w')
-
-def log(msg):
-    print(msg)
-    logging.info(msg)
-
-if save_models and not os.path.exists(models_folder):
-    os.makedirs(models_folder)
-
-# ======= FUNCTIONS =======
-def create_sequences(data, look_back, future_steps):
+def create_dataset(data, n_steps):
     X, y = [], []
-    for i in range(len(data) - look_back - future_steps):
-        X.append(data[i:i + look_back])
-        y.append(data[i + look_back:i + look_back + future_steps])
+    for i in range(len(data) - n_steps):
+        X.append(data[i:i + n_steps])
+        y.append(data[i + 1:i + n_steps + 1])
     return np.array(X), np.array(y)
 
-def build_model(input_shape, output_steps):
-    model = Sequential()
-    model.add(Input(shape=input_shape))
-    model.add(LSTM(128, return_sequences=False))
-    model.add(RepeatVector(output_steps))
-    model.add(LSTM(64, return_sequences=True))
-    model.add(Dropout(0.2))
-    model.add(TimeDistributed(Dense(1)))
-    model.compile(optimizer='adam', loss='mean_squared_error')
-    return model
+currencies = ['USD/EUR', 'AUD/EUR', 'GBP/EUR', 'CHF/EUR']
+n_steps = 30
+epochs = 80
+batch_size = 32
+future_days = 30
+model_dir = "modelos_lstm"
+os.makedirs(model_dir, exist_ok=True)
 
-# ======= LOAD DATA =======
-df = pd.read_csv(csv_file, parse_dates=['Date'])
-df.set_index('Date', inplace=True)
+metrics = []
 
-all_metrics = []
+df = pd.read_csv("data/historical_rates.csv", parse_dates=["Date"])
+df.set_index("Date", inplace=True)
 
-# ======= TRAINING LOOP =======
 for currency in currencies:
-    log(f"\n🔄 Training model for {currency}...")
-    start = time.time()
+    print(f"\n▶ Training model for {currency}")
+    start_time = time.time()
 
     series = df[currency].dropna().values.reshape(-1, 1)
-    if len(series) < look_back + future_days:
-        log(f"❌ Not enough data for {currency}.")
-        continue
 
     scaler = MinMaxScaler()
-    scaled = scaler.fit_transform(series)
+    series_scaled = scaler.fit_transform(series)
 
-    X, y = create_sequences(scaled, look_back, future_days)
-    y = y.reshape(y.shape[0], y.shape[1], 1)
+    X, y = create_dataset(series_scaled, n_steps)
 
-    train_size = int(len(X) * 0.8)
-    X_train, y_train = X[:train_size], y[:train_size]
-    X_test, y_test = X[train_size:], y[train_size:]
+    X = X.reshape((X.shape[0], X.shape[1], 1))
+    y = y.reshape((y.shape[0], y.shape[1], 1))
 
-    model = build_model((look_back, 1), future_days)
-    callbacks = [
-        EarlyStopping(monitor='val_loss', patience=10, restore_best_weights=True),
-        ReduceLROnPlateau(monitor='val_loss', factor=0.5, patience=5)
-    ]
+    model = Sequential([
+        LSTM(64, activation='tanh', return_sequences=True, input_shape=(n_steps, 1)),
+        Dropout(0.2),
+        LSTM(64, activation='tanh', return_sequences=True),
+        Dropout(0.2),
+        TimeDistributed(Dense(1))
+    ])
 
-    model.fit(X_train, y_train,
-              validation_data=(X_test, y_test),
-              epochs=300,
-              batch_size=64,
-              callbacks=callbacks,
-              verbose=1)
+    model.compile(optimizer='adam', loss='mse')
 
-    y_pred_scaled = model.predict(X_test, verbose=0)
-    y_pred = scaler.inverse_transform(y_pred_scaled.reshape(-1, 1)).reshape(-1, future_days)
-    y_true = scaler.inverse_transform(y_test.reshape(-1, 1)).reshape(-1, future_days)
+    early_stop = EarlyStopping(patience=10, restore_best_weights=True)
+    reduce_lr = ReduceLROnPlateau(patience=5, factor=0.5)
 
-    mae = np.mean([mean_absolute_error(t, p) for t, p in zip(y_true, y_pred)])
-    rmse = np.mean([np.sqrt(mean_squared_error(t, p)) for t, p in zip(y_true, y_pred)])
-    r2 = np.mean([r2_score(t, p) for t, p in zip(y_true, y_pred)])
+    model.fit(X, y, epochs=epochs, batch_size=batch_size,
+              validation_split=0.2, callbacks=[early_stop, reduce_lr], verbose=0)
 
-    log(f"📊 MAE: {mae:.6f} | RMSE: {rmse:.6f} | R²: {r2:.4f}")
-    all_metrics.append({'Currency': currency, 'MAE': mae, 'RMSE': rmse, 'R2': r2})
+    last_seq = series_scaled[-n_steps:]
+    forecast_scaled = []
+    current_seq = last_seq.reshape(1, n_steps, 1)
 
-    # Final forecast from last window
-    last_window = scaled[-look_back:].reshape(1, look_back, 1)
-    prediction_scaled = model.predict(last_window, verbose=0).reshape(-1, 1)
-    prediction = scaler.inverse_transform(prediction_scaled).flatten()
+    for _ in range(future_days):
+        next_val = model.predict(current_seq, verbose=0)[0, -1, 0]
+        forecast_scaled.append(next_val)
+        current_seq = np.append(current_seq[:, 1:, :], [[[next_val]]], axis=1)
 
-    log(f"🔍 Last real value: {series[-1][0]}")
-    log(f"🔮 First predicted value: {prediction[0]}")
+    forecast = scaler.inverse_transform(np.array(forecast_scaled).reshape(-1, 1))
 
-    start_date = df.index[-1] + timedelta(days=1)
-    future_dates = pd.date_range(start_date, periods=future_days, freq='D')
-    df_pred = pd.DataFrame({f'Prediction {currency}': prediction}, index=future_dates)
-    df_pred.to_csv(f'prediccion_{currency.replace("/", "_")}_30dias.csv')
-    log(f"💾 Saved prediction: prediccion_{currency.replace('/', '_')}_30dias.csv")
+    forecast_index = pd.date_range(start=df.index[-1] + pd.Timedelta(days=1), periods=future_days)
+    df_pred = pd.DataFrame(forecast, index=forecast_index, columns=[currency])
+    df_pred.to_csv(f"prediccion_{currency.replace('/', '_')}_30dias.csv")
+    print(f"💾 Saved prediction: prediccion_{currency.replace('/', '_')}_30dias.csv")
 
-    if save_models:
-        model_path = os.path.join(models_folder, f'modelo_{currency.replace("/", "_")}.keras')
-        model.save(model_path)
-        log(f"💾 Model saved: {model_path}")
+    model.save(os.path.join(model_dir, f"modelo_{currency.replace('/', '_')}.keras"))
+    print(f"💾 Model saved: {model_dir}/modelo_{currency.replace('/', '_')}.keras")
 
-    log(f"✅ Completed {currency} in {(time.time() - start)/60:.2f} minutes")
-    sys.stdout.flush()
+    real_eval = series[-future_days:].flatten()
+    pred_eval = forecast[:len(real_eval)].flatten()
 
-# ======= SAVE METRICS =======
-pd.DataFrame(all_metrics).to_csv(metrics_file, index=False)
-log(f"📁 Metrics saved to {metrics_file}")
+    mae = mean_absolute_error(real_eval, pred_eval)
+    rmse = mean_squared_error(real_eval, pred_eval, squared=False)
+    r2 = r2_score(real_eval, pred_eval)
+    metrics.append([currency, mae, rmse, r2])
+
+    print(f"📊 MAE: {mae:.6f} | RMSE: {rmse:.6f} | R²: {r2:.4f}")
+    print(f"✅ Completed {currency} in {time.time() - start_time:.2f} seconds")
+
+metrics_df = pd.DataFrame(metrics, columns=["Currency", "MAE", "RMSE", "R2"])
+metrics_df.to_csv("metricas_monedas.csv", index=False)
+print("📁 Metrics saved to metricas_monedas.csv")
