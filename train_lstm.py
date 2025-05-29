@@ -81,7 +81,7 @@ for currency in currencies:
     pred_eval = forecast[:len(real_eval)].flatten()
 
     mae = mean_absolute_error(real_eval, pred_eval)
-    rmse = mean_squared_error(real_eval, pred_eval, squared=False)
+    rmse = mean_squared_error(real_eval, pred_eval) ** 0.5
     r2 = r2_score(real_eval, pred_eval)
     metrics.append([currency, mae, rmse, r2])
 
