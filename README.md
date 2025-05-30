@@ -27,66 +27,75 @@ You can use a virtual environment (recommended):
 ```bash
 python -m venv venv
 source venv/bin/activate  # On Windows: venv\Scripts\activate
-
-Install dependencies:
-
-bash
-Copiar
-Editar
-pip install -r requirements.txt
-
 ```
-🚀 How to Run Locally
-Clone the repository:
 
+### Install dependencies:
+```bash
+pip install -r requirements.txt
+```
 
+---
+
+## 🚀 How to Run Locally
+
+### 1. Clone the repository:
+```bash
 git clone https://github.com/YOUR-USERNAME/exchange-rate-visualizer.git
 cd exchange-rate-visualizer
+```
 
-Install dependencies:
-
-pip install -r requirements.txt
-
-
-
-Download and process historical data:
-
+### 2. Download and process historical data:
+```bash
 python train_model.py
+```
 
 
-
-Download and process historical data:
-
+### 3. Download and process historical data:
+```bash
 python fetch_data.py
+```
 
 
-
-Launch the Streamlit app:
-
+### 4. Launch the Streamlit app:
+```bash
 streamlit run app.py
+```
 
+---
 
-📂 Project Structure
-bash
-Copiar
-Editar
+## 📂 Project Structure
+
+```
 .
 ├── app.py                        # Main Streamlit interface
+
 ├── train_model.py                # Script to download exchange rate data
+
 ├── train_lstm.py                # Trains LSTM models and saves forecasts
+
 ├── modelos_lstm/                # Directory where models are stored
+
 │   ├── modelo_USD_EUR.keras
+
 │   └── ...
+
 ├── data/
+
 │   └── historical_rates.csv     # Data downloaded from Frankfurter API
+
 ├── prediccion_USD_EUR_30dias.csv  # Forecast output example
+
 ├── metricas_monedas.csv         # Evaluation metrics (MAE, RMSE, R2)
+
 ├── requirements.txt             # Python dependencies
+
 └── README.md                    # This file
+```
 
+---
 
+## 🛠️ Notes
 
-🛠️ Notes
 Before retraining models with train_lstm.py, old models in modelos_lstm/ will be automatically overwritten.
 
 Each model forecasts 30 days into the future based on the last 30-day sequence.
