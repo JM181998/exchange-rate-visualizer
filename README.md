@@ -65,7 +65,7 @@ streamlit run app.py
 
 ## 📂 Project Structure
 
-````
+`
 .
 ├── app.py                        # Main Streamlit interface
 ├── train_model.py                # Script to download exchange rate data
@@ -79,7 +79,7 @@ streamlit run app.py
 ├── metricas_monedas.csv         # Evaluation metrics (MAE, RMSE, R2)
 ├── requirements.txt             # Python dependencies
 └── README.md                    # This file
-````
+`
 
 ---
 
