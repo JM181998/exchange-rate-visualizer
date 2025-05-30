@@ -1,18 +1,18 @@
-import pandas as pd
-import numpy as np
 import os
 import time
-from sklearn.preprocessing import MinMaxScaler
+import numpy as np
+import pandas as pd
 from keras.models import Sequential
-from keras.layers import LSTM, Dense, Dropout, TimeDistributed
+from keras.layers import LSTM, Dense, Dropout
 from keras.callbacks import EarlyStopping, ReduceLROnPlateau
+from sklearn.preprocessing import MinMaxScaler
 from sklearn.metrics import mean_absolute_error, mean_squared_error, r2_score
 
 def create_dataset(data, n_steps):
     X, y = [], []
     for i in range(len(data) - n_steps):
         X.append(data[i:i + n_steps])
-        y.append(data[i + 1:i + n_steps + 1])
+        y.append(data[i + n_steps])
     return np.array(X), np.array(y)
 
 currencies = ['USD/EUR', 'AUD/EUR', 'GBP/EUR', 'CHF/EUR']
@@ -22,6 +22,10 @@ batch_size = 32
 future_days = 30
 model_dir = "modelos_lstm"
 os.makedirs(model_dir, exist_ok=True)
+
+for f in os.listdir(model_dir):
+    if f.endswith(".keras"):
+        os.remove(os.path.join(model_dir, f))
 
 metrics = []
 
@@ -38,16 +42,12 @@ for currency in currencies:
     series_scaled = scaler.fit_transform(series)
 
     X, y = create_dataset(series_scaled, n_steps)
-
     X = X.reshape((X.shape[0], X.shape[1], 1))
-    y = y.reshape((y.shape[0], y.shape[1], 1))
 
     model = Sequential([
-        LSTM(64, activation='tanh', return_sequences=True, input_shape=(n_steps, 1)),
+        LSTM(64, activation='tanh', return_sequences=False, input_shape=(n_steps, 1)),
         Dropout(0.2),
-        LSTM(64, activation='tanh', return_sequences=True),
-        Dropout(0.2),
-        TimeDistributed(Dense(1))
+        Dense(1)
     ])
 
     model.compile(optimizer='adam', loss='mse')
@@ -63,7 +63,7 @@ for currency in currencies:
     current_seq = last_seq.reshape(1, n_steps, 1)
 
     for _ in range(future_days):
-        next_val = model.predict(current_seq, verbose=0)[0, -1, 0]
+        next_val = model.predict(current_seq, verbose=0)[0, 0]
         forecast_scaled.append(next_val)
         current_seq = np.append(current_seq[:, 1:, :], [[[next_val]]], axis=1)
 
