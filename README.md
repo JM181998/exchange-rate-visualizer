@@ -65,32 +65,21 @@ streamlit run app.py
 
 ## 📂 Project Structure
 
-`
+````
 .
 ├── app.py                        # Main Streamlit interface
-
 ├── train_model.py                # Script to download exchange rate data
-
 ├── train_lstm.py                # Trains LSTM models and saves forecasts
-
 ├── modelos_lstm/                # Directory where models are stored
-
 │   ├── modelo_USD_EUR.keras
-
 │   └── ...
-
 ├── data/
-
 │   └── historical_rates.csv     # Data downloaded from Frankfurter API
-
 ├── prediccion_USD_EUR_30dias.csv  # Forecast output example
-
 ├── metricas_monedas.csv         # Evaluation metrics (MAE, RMSE, R2)
-
 ├── requirements.txt             # Python dependencies
-
 └── README.md                    # This file
-`
+````
 
 ---
 
