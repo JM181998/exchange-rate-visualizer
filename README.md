@@ -65,41 +65,35 @@ streamlit run app.py
 
 ## 📂 Project Structure
 
-```
+``
 .
 ├── app.py                        # Main Streamlit interface
-
 ├── train_model.py                # Script to download exchange rate data
-
 ├── train_lstm.py                # Trains LSTM models and saves forecasts
-
 ├── modelos_lstm/                # Directory where models are stored
-
 │   ├── modelo_USD_EUR.keras
-
 │   └── ...
-
 ├── data/
-
 │   └── historical_rates.csv     # Data downloaded from Frankfurter API
-
 ├── prediccion_USD_EUR_30dias.csv  # Forecast output example
-
 ├── metricas_monedas.csv         # Evaluation metrics (MAE, RMSE, R2)
-
 ├── requirements.txt             # Python dependencies
-
 └── README.md                    # This file
-```
+``
 
 ---
 
 ## 🛠️ Notes
 
-Before retraining models with train_lstm.py, old models in modelos_lstm/ will be automatically overwritten.
+- ✅ Before retraining models with train_lstm.py, old models in modelos_lstm/ will be automatically overwritten.
+- 🔮 Each model forecasts 30 days into the future based on the last 30-day sequence.
+- ⚠️ This app is intended for educational and experimental purposes; predictions are statistical estimates, not financial advice.
+- 💻 Compatible with Windows, macOS, and Linux environments where Python ≥ 3.7 is available.
 
-Each model forecasts 30 days into the future based on the last 30-day sequence.
+---
 
-The app is intended for educational and experimental purposes; predictions are statistical estimates, not financial advice.
+## 📬 Contact
 
-Compatible with Windows, macOS, and Linux environments where Python ≥ 3.7 is available.
+Feel free to open an issue or fork the repository if you'd like to contribute or provide feedback!
+
+📌 Follow me in [LinkedIn](https://www.linkedin.com/in/juanma-fuentes/)
