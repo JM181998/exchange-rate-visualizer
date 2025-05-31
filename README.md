@@ -4,6 +4,12 @@ An interactive tool to explore and forecast currency exchange rates using histor
 
 ---
 
+## 🌐 Objective
+
+To provide users with an interactive, data-driven tool for analyzing historical exchange rate trends and producing short-term forecasts using deep learning. The system is designed to be educational, reproducible, and easy to deploy in local or production environments.
+
+---
+
 ## ✨ Features
 
 - 📅 Fetches historical exchange rates from 1999 to the present.
@@ -12,6 +18,18 @@ An interactive tool to explore and forecast currency exchange rates using histor
 - 📥 Option to download CSV files of both historical data and forecasts.
 - 📈 Displays model evaluation metrics: MAE, RMSE, and R².
 - 🔁 Automatically updates models and overwrites old ones to ensure fresh predictions.
+
+---
+
+## 🧠 Technologies Used
+
+- 🐍 Python 3.10.11
+- 🧠 TensorFlow / Keras for LSTM modeling
+- 📊 Plotly for interactive data visualization
+- 🖼️ Streamlit for the web interface
+- 📈 Pandas, NumPy for data processing
+- 🔄 Python scripting for ETL and model automation
+- 🗃️ Modular project structure ready for containerization and future automation
 
 ---
 
@@ -40,7 +58,7 @@ pip install -r requirements.txt
 
 ### 1. Clone the repository:
 ```bash
-git clone https://github.com/YOUR-USERNAME/exchange-rate-visualizer.git
+git clone https://github.com/JM181998/exchange-rate-visualizer.git
 cd exchange-rate-visualizer
 ```
 
@@ -49,14 +67,7 @@ cd exchange-rate-visualizer
 python train_model.py
 ```
 
-
-### 3. Download and process historical data:
-```bash
-python fetch_data.py
-```
-
-
-### 4. Launch the Streamlit app:
+### 3. Launch the Streamlit app:
 ```bash
 streamlit run app.py
 ```
@@ -65,21 +76,18 @@ streamlit run app.py
 
 ## 📂 Project Structure
 
-````
-.
-├── app.py                        # Main Streamlit interface
-├── train_model.py                # Script to download exchange rate data
-├── train_lstm.py                # Trains LSTM models and saves forecasts
-├── modelos_lstm/                # Directory where models are stored
-│   ├── modelo_USD_EUR.keras
-│   └── ...
-├── data/
-│   └── historical_rates.csv     # Data downloaded from Frankfurter API
-├── prediccion_USD_EUR_30dias.csv  # Forecast output example
-├── metricas_monedas.csv         # Evaluation metrics (MAE, RMSE, R2)
-├── requirements.txt             # Python dependencies
-└── README.md                    # This file
-````
+
+| Folder / File                    | Description                                                                 |
+|----------------------------------|-----------------------------------------------------------------------------|
+| `app.py`                         | Streamlit app interface to visualize historical data and forecasts.        |
+| `fetch_data.py`                  | Script to download historical exchange rate data from Frankfurter API.     |
+| `train_lstm.py`                  | Trains LSTM models for selected currency pairs and saves predictions.      |
+| `modelos_lstm/`                  | Folder where trained LSTM models are stored (`.keras` format).             |
+| `data/`                          | Contains processed historical data used for training and visualization.    |
+| `prediccion_USD_EUR_30dias.csv` | Example CSV file with 30-day forecast for USD to EUR.                      |
+| `metricas_monedas.csv`          | CSV file with model evaluation metrics: MAE, RMSE, R².                      |
+| `requirements.txt`              | List of required Python libraries.                                         |
+| `README.md`                     | Project documentation (this file).       
 
 ---
 
