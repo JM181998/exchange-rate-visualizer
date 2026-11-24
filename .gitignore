@@ -1,17 +1,16 @@
 # Python
 __pycache__/
 *.pyc
+.pytest_cache/
 
-# Virtual environment
+# Virtual environments
 venv/
+.venv/
 
-# Model files (opcional)
-modelos_lstm/
-
-# Logs
+# Logs and OS files
 *.log
-
-# Datos grandes (opcional)
-#data/
-
 .DS_Store
+
+# Saved Keras models (the pipeline does not need them)
+*.keras
+modelos_lstm/

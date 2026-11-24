@@ -1,65 +1,90 @@
-import streamlit as st
-import requests
-import datetime
 import pandas as pd
 import plotly.graph_objects as go
+import streamlit as st
 
-st.set_page_config(page_title="Exchange Rate Visualizer", layout="wide")
+from fxviz import config, data
 
-@st.cache_data
-def fetch_exchange_rates():
-    end_date = datetime.date.today().isoformat()
-    url = f'https://api.frankfurter.app/1999-01-01..{end_date}?base=EUR&symbols=USD,AUD,GBP,CHF'
-    response = requests.get(url)
-    if response.status_code != 200:
-        raise Exception(f"Request failed: {response.status_code}")
-    
-    data = response.json()
-    dates, usd, aud, gbp, chf = [], [], [], [], []
+st.set_page_config(page_title="Exchange Rate Visualizer", page_icon="💱", layout="wide")
 
-    for date_str, values in data['rates'].items():
-        dates.append(datetime.datetime.strptime(date_str, "%Y-%m-%d"))
-        usd.append(values['USD'])
-        aud.append(values['AUD'])
-        gbp.append(values['GBP'])
-        chf.append(values['CHF'])
 
-    df = pd.DataFrame({
-        'Date': dates,
-        'USD/EUR': usd,
-        'AUD/EUR': aud,
-        'GBP/EUR': gbp,
-        'CHF/EUR': chf
-    })
-    df.to_csv("data/historical_rates.csv", index=False)
-    return df
+@st.cache_data(ttl=6 * 3600, show_spinner="Updating exchange rates (ECB via Frankfurter)…")
+def get_rates():
+    """Incrementally refresh the cached dataset; fall back to whatever is on disk."""
+    try:
+        return data.update_rates(), None
+    except data.DataUnavailable as exc:
+        return data.load_rates(), str(exc)
 
-def plot_exchange_rates(df):
-    fig = go.Figure()
-    for currency, color in zip(['USD/EUR', 'AUD/EUR', 'GBP/EUR', 'CHF/EUR'], ['blue', 'green', 'red', 'purple']):
-        fig.add_trace(go.Scatter(
-            x=df['Date'], y=df[currency], mode='lines', name=currency,
-            hovertemplate=f"1 EUR = %{{y:.4f}} {currency[:3]}<br>Date: %{{x|%Y-%m-%d}}",
-            line=dict(color=color)
-        ))
-    fig.update_layout(
-        title="Exchange Rate Trends (EUR to USD, AUD, GBP, CHF)",
-        xaxis_title="Date",
-        yaxis_title="Exchange Rate",
-        template="plotly_dark",
-        hovermode="x unified"
+
+PRESETS = {"1M": 30, "6M": 182, "1Y": 365, "5Y": 1826, "10Y": 3652, "Max": None}
+
+st.title("💱 Exchange Rate Visualizer")
+st.caption("Euro reference rates published by the European Central Bank, served by the Frankfurter API.")
+
+rates, error = get_rates()
+if rates.empty:
+    st.error(f"No exchange-rate data available. {error or ''}")
+    st.stop()
+if error:
+    st.warning(f"Could not refresh the data ({error}). Showing the last saved dataset.")
+if not data.is_daily(rates):
+    st.info("The saved dataset is weekly (legacy). It will be replaced by daily data on the next successful update.")
+
+with st.sidebar:
+    st.header("Options")
+    selected = st.multiselect("Currencies", config.PAIRS, default=list(config.PAIRS))
+    period = st.radio("Period", list(PRESETS), index=3, horizontal=True)
+    mode = st.radio("Scale", ["Rate", "Rebased to 100"], help="Rebasing makes currencies with different levels comparable.")
+
+if not selected:
+    st.info("Select at least one currency in the sidebar.")
+    st.stop()
+
+last_date = rates.index.max()
+days = PRESETS[period]
+view = rates[selected] if days is None else rates.loc[rates.index >= last_date - pd.Timedelta(days=days), selected]
+
+# --- headline numbers -------------------------------------------------------------------
+columns = st.columns(len(selected))
+for col, pair in zip(columns, selected):
+    series = rates[pair].dropna()
+    latest = series.iloc[-1]
+    year_ago = series.asof(series.index[-1] - pd.Timedelta(days=365))
+    delta = f"{(latest / year_ago - 1) * 100:+.1f}% vs 1 year ago" if pd.notna(year_ago) else None
+    col.metric(f"1 EUR in {pair[:3]}", f"{latest:.4f}", delta, delta_color="off")
+st.caption(f"Latest observation: {last_date:%d %b %Y}")
+
+# --- chart ------------------------------------------------------------------------------
+plot_data = view.copy()
+if mode == "Rebased to 100":
+    plot_data = plot_data / plot_data.apply(lambda s: s.dropna().iloc[0]) * 100
+
+fig = go.Figure()
+for pair in selected:
+    fig.add_trace(
+        go.Scatter(
+            x=plot_data.index,
+            y=plot_data[pair],
+            mode="lines",
+            name=pair,
+            hovertemplate="%{y:.4f}",
+        )
     )
-    return fig
+fig.update_layout(
+    hovermode="x unified",
+    yaxis_title="Units per 1 EUR" if mode == "Rate" else "Index (start = 100)",
+    legend=dict(orientation="h", yanchor="bottom", y=1.02, x=0),
+    margin=dict(l=10, r=10, t=30, b=10),
+    height=520,
+)
+st.plotly_chart(fig)
 
-st.title("📈 Exchange Rate Visualizer")
-st.markdown("Track historical exchange rates of the Euro (EUR) against USD, AUD, GBP, and CHF since 1999.")
-
-with st.spinner("Fetching data..."):
-    df = fetch_exchange_rates()
-
-st.plotly_chart(plot_exchange_rates(df), use_container_width=True)
-
-with st.expander("View raw data table"):
-    st.dataframe(df)
-
-st.download_button("📥 Download CSV", df.to_csv(index=False), file_name="historical_rates.csv")
+with st.expander("Data table"):
+    st.dataframe(view.sort_index(ascending=False))
+st.download_button(
+    "📥 Download selection as CSV",
+    view.to_csv(index_label="Date").encode(),
+    file_name="exchange_rates.csv",
+    mime="text/csv",
+)
+st.caption("`USD/EUR` means: how many USD you get for 1 EUR. For educational purposes only, not financial advice.")

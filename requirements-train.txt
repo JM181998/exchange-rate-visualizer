@@ -1,0 +1,4 @@
+# Needed only to (re)train the LSTM: python -m fxviz.pipeline
+# Use Python 3.11 or 3.12.
+-r requirements.txt
+tensorflow>=2.18

@@ -1,8 +1,6 @@
-requests
-pandas
-plotly
-streamlit
-numpy
-matplotlib
-scikit-learn
-tensorflow
+# Runtime dependencies of the Streamlit app (light: no TensorFlow needed to run the dashboard)
+streamlit>=1.50
+plotly>=6.0
+pandas>=2.2
+numpy>=1.26
+requests>=2.31

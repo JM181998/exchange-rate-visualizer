@@ -1,0 +1,16 @@
+{
+  "generated_at": "2026-11-24T15:46:49+00:00",
+  "data_start": "1999-01-04",
+  "data_end": "2026-11-24",
+  "horizon_business_days": 30,
+  "test_size_business_days": 500,
+  "origin_step_business_days": 5,
+  "interval": [
+    0.1,
+    0.9
+  ],
+  "models": [
+    "naive",
+    "lstm"
+  ]
+}
